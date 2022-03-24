@@ -2,6 +2,8 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import { Layout, Form, Button, Select, Row, Col, DatePicker, TimePicker} from 'antd';
 import axios from 'axios';
+import Connection from './Connection';
+
 // import { useState } from 'react/cjs/react.production.min';
 const { Header, Content, Footer } = Layout;
 
@@ -34,8 +36,14 @@ function App() {
 
   return (
     <Layout>
-      <Header>SBB Logo</Header>
-      <Content>
+      <Header style={{height: 100, backgroundColor: 'white'}}>
+      <span style={{display: 'flex', justifyContent: 'space-between'}}>
+        <h1>Bike Reservation Planner</h1>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/7/70/SBB_CFF_FFS_logo.svg" style={{width: 300, height: 'fit-content', marginTop: 20}}></img>
+      </span>
+      </Header>
+      <Content style={{paddingTop: 50}}>
+      
       <Form
       name="basic"
       labelCol={{ span: 8 }}
@@ -47,14 +55,37 @@ function App() {
     >
 
       <Row justify="start">
-      <Col span={8}>
+      <Col span={4} justify="start">
       <Form.Item
         label="From"
         name="from"
       >
         <Select
         showSearch
-        placeholder="Select a train station"
+        placeholder="From"
+        optionFilterProp="children"
+        onChange={() => {} }
+        onSearch={() => {}}
+        filterOption={(input, option) =>
+          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+        }
+      >
+        {stations.map(item => (
+          <Select.Option key={item.key} value={item.key}>
+            {item.name}
+          </Select.Option>
+        ))}
+      </Select>
+      </Form.Item>
+      </Col>
+      <Col span={4} justify="start">
+      <Form.Item
+        label="To"
+        name="to"
+      >
+        <Select
+        showSearch
+        placeholder="To"
         optionFilterProp="children"
         onChange={() => {} }
         onSearch={() => {}}
@@ -86,61 +117,75 @@ function App() {
         <TimePicker />
       </Form.Item>
       </Col>
-    </Row>
-
-    <Row justify="start">
-      <Col span={8}>
+      <Col span={4}>
       <Form.Item
-        label="To"
-        name="to"
+        label="Bikes"
+        name="numVelos"
       >
         <Select
-        showSearch
-        placeholder="Select a train station"
-        optionFilterProp="children"
-        onChange={() => {} }
-        onSearch={() => {}}
-        filterOption={(input, option) =>
-          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-        }
+        placeholder="Bikes"
       >
-        {stations.map(item => (
-          <Select.Option key={item.key} value={item.key}>
-            {item.name}
+
+          <Select.Option key={1} value={1}>
+            {1}
           </Select.Option>
-        ))}
+          <Select.Option key={2} value={2}>
+            {2}
+          </Select.Option>
+          <Select.Option key={3} value={3}>
+            {3}
+          </Select.Option>
+
       </Select>
       </Form.Item>
       </Col>
-      <Col span={4}>
-      <Form.Item
-        label="Date"
-        name="dateTo"
-      >
-        <DatePicker picker={'date'} onChange={() => {}} />
-      </Form.Item>
-        </Col>
-      <Col span={4}>
-      <Form.Item
-        label="Time"
-        name="timeFrom"
-      >
-        <TimePicker />
-      </Form.Item>
-      </Col>
-    </Row>
-    <Row>
-    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+      <Col span={3} offset={1}>
+    <Form.Item>
         <Button type="primary" htmlType="submit">
           Submit
         </Button>
       </Form.Item>
+      </Col>
     </Row>
+
+    <Connection from={'13:00'} to={'14:00'} />
+
     </Form>
       </Content>
       <Footer>Footer</Footer>
     </Layout>
   );
 }
+
+// function AllStationsOfASection(startId, endId, line) {
+//   const [stations, setStations] = useState([]);
+
+//   axios.get('https://data.sbb.ch/api/records/1.0/search/?dataset=linie-mit-betriebspunkten&q=&rows=-1&sort=-linie&facet=abkurzung_bpk&facet=linie&facet=linienname')
+//     .then(res => {
+//       const data = res.data.records.map(el => {return {key : el.fields.bpuic, line: el.fields.linie, km: el.fields.km}; });
+//       let startStation = data.find(obj => obj.key == startId)
+//       let endStation = data.find(obj => obj.key == endId)
+//       let stations = data.filter((el) => el.line == line && el.km <= endStation.km && el.km >= startStation.km)
+//       setStations(()=> stations)
+//     })
+
+//     console.log(stations)
+//     return stations;
+// }
+
+// Requirements:
+// - get all available Stations
+// - given a station, get all possible connections
+// - given a start, end and time, get next few connections
+// - given a connection, get the probabilities
+// - given probabilities display graph
+
+
+// Connection
+// max leisure score
+// holiday score
+// capacity
+// reservations over time
+// time of day (aka zug nummer)
 
 export default App;

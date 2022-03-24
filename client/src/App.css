@@ -39,3 +39,17 @@
 
 @import '~antd/dist/antd.css';
 
+.ant-slider {
+  display: inline-block;
+    width: 150px;
+    margin-bottom: 0;
+}
+
+.ant-slider-disabled .ant-slider-track {
+  background-color: black !important;
+}
+
+.ant-slider-disabled .ant-slider-handle {
+  border-color: black !important;
+}
+
