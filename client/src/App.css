@@ -53,3 +53,12 @@
   border-color: black !important;
 }
 
+.ant-col {
+  max-width: 100%;
+  margin: 0 4px;
+}
+
+.ant-select-selector {
+  height: 44px !important;
+}
+

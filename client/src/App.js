@@ -14,6 +14,9 @@ function App() {
 
   const [stations, setStations] = useState([]);
 
+  const [from, setFrom] = useState(null);
+  const [to, setTo] = useState(null);
+
   useEffect(() => {
     axios.get('https://data.sbb.ch/api/records/1.0/search/?dataset=halteort&q=&rows=10000&facet=bps_name&facet=funktion138')
     .then(res => {
@@ -28,6 +31,9 @@ function App() {
 
   const onFinish = (values) => {
     console.log('Success:', values);
+
+    setFrom(() => stations.find(el => el.key == values.from));
+    setTo(() => stations.find(el => el.key == values.to));
   };
 
   const onFinishFailed = (errorInfo) => {
@@ -36,14 +42,14 @@ function App() {
 
   return (
     <Layout>
-      <Header style={{height: 100, backgroundColor: 'white'}}>
+      <Header style={{height: 100, backgroundColor: 'white', borderBottom: '1px solid #e5e5e5'}}>
       <span style={{display: 'flex', justifyContent: 'space-between'}}>
-        <h1>Bike Reservation Planner</h1>
+        <h1 style={{fontSize: 35, fontWeight: 700}}>Bike Reservation Planner</h1>
         <img src="https://upload.wikimedia.org/wikipedia/commons/7/70/SBB_CFF_FFS_logo.svg" style={{width: 300, height: 'fit-content', marginTop: 20}}></img>
       </span>
       </Header>
-      <Content style={{paddingTop: 50}}>
-      
+      <Content style={{paddingTop: 50, backgroundColor: 'white'}}>
+
       <Form
       name="basic"
       labelCol={{ span: 8 }}
@@ -54,10 +60,9 @@ function App() {
       autoComplete="off"
     >
 
-      <Row justify="start">
+      <Row justify="center">
       <Col span={4} justify="start">
       <Form.Item
-        label="From"
         name="from"
       >
         <Select
@@ -69,6 +74,7 @@ function App() {
         filterOption={(input, option) =>
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
+        style={{height: '3.2em'}}
       >
         {stations.map(item => (
           <Select.Option key={item.key} value={item.key}>
@@ -78,9 +84,8 @@ function App() {
       </Select>
       </Form.Item>
       </Col>
-      <Col span={4} justify="start">
+      <Col span={4} justify="start" className="gutter-row">
       <Form.Item
-        label="To"
         name="to"
       >
         <Select
@@ -92,6 +97,7 @@ function App() {
         filterOption={(input, option) =>
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
+        style={{height: '3.2em'}}
       >
         {stations.map(item => (
           <Select.Option key={item.key} value={item.key}>
@@ -101,29 +107,27 @@ function App() {
       </Select>
       </Form.Item>
       </Col>
-      <Col span={4}>
+      <Col span={2}>
       <Form.Item
-        label="Date"
         name="dateFrom"
       >
-        <DatePicker />
+        <DatePicker style={{height: '3.2em'}} />
       </Form.Item>
       </Col>
-      <Col span={4}>
+      <Col span={2}>
       <Form.Item
-        label="Time"
         name="timeFrom"
       >
-        <TimePicker />
+        <TimePicker style={{height: '3.2em'}} />
       </Form.Item>
       </Col>
-      <Col span={4}>
+      <Col span={2}>
       <Form.Item
-        label="Bikes"
-        name="numVelos"
+        name="bikes"
       >
         <Select
         placeholder="Bikes"
+        size="large"
       >
 
           <Select.Option key={1} value={1}>
@@ -141,18 +145,36 @@ function App() {
       </Col>
       <Col span={3} offset={1}>
     <Form.Item>
-        <Button type="primary" htmlType="submit">
-          Submit
+        <Button type="primary" htmlType="submit" style={{backgroundColor: '#eb0000', border: 'none', borderRadius: '.13333em', height: '44px', padding: '0.93333em 2.66667em 1em'}}>
+          Search for connection
         </Button>
       </Form.Item>
       </Col>
+    </Row>
+
+    <Row style={{marginBottom: 50}}>
+    <Col span={8}></Col>
+    {from != null && to != null &&
+      <Col span={8} style={{fontSize: 40}}>
+
+      {from.name}
+
+      <svg style={{ width: '0.8em', height: '1.6em', margin: '-.125em auto -.46667em'}}>
+        <use href="#SBB_08_arrow_down" fill='black'></use>
+      </svg>
+
+      {to.name}
+
+    </Col>
+    }
+        <Col span={8}></Col>
     </Row>
 
     <Connection from={'13:00'} to={'14:00'} />
 
     </Form>
       </Content>
-      <Footer>Footer</Footer>
+      <Footer style={{padding: 0}}></Footer>
     </Layout>
   );
 }
