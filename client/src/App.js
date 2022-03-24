@@ -16,15 +16,12 @@ function App() {
 
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
+  const [trips, setTrips] = useState([]);
 
   useEffect(() => {
-    axios.get('https://data.sbb.ch/api/records/1.0/search/?dataset=halteort&q=&rows=10000&facet=bps_name&facet=funktion138')
+    axios.get('http://localhost:8000/stations', {mode: 'no-cors'})
     .then(res => {
-      const data = res.data.records.map(el => {return {key : el.fields.bpuic, name: el.fields.bps_name}; });
-      let options = data.filter((arr, index, self) =>
-      index === self.findIndex((t) => (t.key === arr.key && t.name === arr.name)))
-
-      setStations(()=> options)
+      setStations(()=> res.data)
     })
   }, []);
 
@@ -32,8 +29,15 @@ function App() {
   const onFinish = (values) => {
     console.log('Success:', values);
 
-    setFrom(() => stations.find(el => el.key == values.from));
-    setTo(() => stations.find(el => el.key == values.to));
+    axios.get('http://localhost:8000/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
+    .then(res => {
+      values.to
+      setFrom(() => values.from)
+      setTo(() => values.to)
+      setTrips(()=> res.data)
+    })
+
+
   };
 
   const onFinishFailed = (errorInfo) => {
@@ -77,7 +81,7 @@ function App() {
         style={{height: '3.2em'}}
       >
         {stations.map(item => (
-          <Select.Option key={item.key} value={item.key}>
+          <Select.Option key={item.id} value={item.id}>
             {item.name}
           </Select.Option>
         ))}
@@ -100,7 +104,7 @@ function App() {
         style={{height: '3.2em'}}
       >
         {stations.map(item => (
-          <Select.Option key={item.key} value={item.key}>
+          <Select.Option key={item.id} value={item.id}>
             {item.name}
           </Select.Option>
         ))}
@@ -170,9 +174,7 @@ function App() {
         <Col span={8}></Col>
     </Row>
 
-    <Connection from={'Bern'} to={'Zurich'} depTime={'13:00'} arrTime={'14:00'} date={'24.04.2022'} />
-    <Connection from={'13:00'} to={'14:00'} />
-    <Connection from={'13:00'} to={'14:00'} />
+    {trips.map(trip => <Connection key={Math.random()} depTime={trip.from.time} arrTime={trip.to.time} trainName={trip.train_name} />)}
 
     </Form>
       </Content>

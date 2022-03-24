@@ -167,3 +167,63 @@ dataset.forEach(element => {
 });
 let kmeans_res = skmeans(kmeans_data, 16);
 
+// API
+
+const express = require("express");
+const path = require("path");
+const app = express();
+const cors = require('cors');
+const port = process.env.PORT || "8000";
+
+app.use(cors());
+
+
+app.get("/", (req, res) => {
+    res.status(200).send("WHATABYTE: Food For Devs");
+});
+
+app.get("/stations", (req, res) => {
+
+    let stations = new Set([]);
+    let ids = new Set([]);
+    dataset.forEach((element) => {
+        if(!ids.has(element.from)) {
+            let station1 = stations_records.find((el) => el['OPUIC'] == element.from)
+            stations.add({id: element.from, name: station1['Stop name']})
+            ids.add(element.from)
+        }
+        if(!ids.has(element.to)) {
+            let station2 = stations_records.find((el) => el['OPUIC'] == element.to)
+            stations.add({id: element.to, name: station2['Stop name']})
+            ids.add(element.to)
+        }
+    })
+    res.status(200).send(JSON.stringify(Array.from(new Set(stations))));
+});
+
+app.get("/trips/:fromId/:toId", (req, res) => {
+
+    const fromId = req.params.fromId
+    const toId = req.params.toId
+    //const time = req.params.time
+
+    let trips = [];
+
+    for (let train_id in trains) {
+        const lo = trains[train_id].findIndex(element => element.opuic == fromId);
+        const hi = trains[train_id].findIndex(element => element.opuic == toId);
+        if (lo != -1 && hi != -1 && lo < hi) {
+            let temp_train = trains_records.find((el) => el['Linie'] == train_id)
+            trains[train_id][lo]['time'] = new Date(trains[train_id][lo]['time']).getHours( )+ ':'+ new Date(trains[train_id][lo]['time']).getMinutes()
+            trains[train_id][hi]['time'] = new Date(trains[train_id][hi]['time']).getHours( )+ ':'+ new Date(trains[train_id][hi]['time']).getMinutes()
+            trips.push({from: trains[train_id][lo], to: trains[train_id][hi], train: train_id, train_name: temp_train['Line Text']});
+        }
+    }
+
+    res.status(200).send(JSON.stringify(trips));
+});
+
+
+app.listen(port, () => {
+    console.log(`Listening to requests on http://localhost:${port}`);
+});

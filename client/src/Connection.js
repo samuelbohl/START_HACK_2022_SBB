@@ -43,11 +43,11 @@ function Connection(props) {
                     <use href="#SBB_oev_b_t02" backgroundColor="27348b" fill='white'></use>
                 </svg>
                 <svg style={{backgroundColor: 'eb0000', width: 90, height: 30, marginLeft: 5}}>
-                    <use href="#SBB_product_ic-1" fill='white'></use>
+                    <use href={"#SBB_product_" + props.trainName} fill='white'></use>
                 </svg>
             </Row>
             <Row>
-                <span style={{fontSize: 18, fontWeight: 700}}>{props.from + ' '}<Slider disabled range defaultValue={[0, 100]}/>{' ' + props.to}</span>
+                <span style={{fontSize: 18, fontWeight: 700}}>{props.depTime + ' '}<Slider disabled range defaultValue={[0, 100]}/>{' ' + props.arrTime}</span>
             </Row>
         </Col>
         <Col span={4}><Line width={300} height={100} {... config} /></Col>
