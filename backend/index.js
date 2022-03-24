@@ -1,7 +1,7 @@
-var fs = require("fs");
-var csv = require("csv-parse/lib/sync");
+const fs = require("fs");
+const csv = require("csv-parse/lib/sync");
 const { start } = require("repl");
-const axios = require('axios');
+const weather = require('./weather-api');
 
 var stations = {}; // map abbreviation to OPUIC
 var trains = {}; // contains all stops and departure/arrival times relative to start of day
@@ -36,21 +36,6 @@ for (let train_id in trains) {
     });
 }
 
-async function getLeisureScore(timestamp, uid) {
-    const response = axios.get('https://weather.api.sbb.ch/' + timestamp + '/leisure_biking:idx/' + uid + '/json', {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer <API KEY>'
-      }
-    });
-    let data = {};
-    //console.log(response)
-    // .coordinates[0].dates[0].value
-    await response.then(response => {data = response.data.data[0].coordinates[0].dates})
-    return data;
-}
-
-var tmp_dataset = [];
 var dataset = [];
 
 // import reservations
@@ -67,14 +52,16 @@ reservations_records.forEach(element => {
         const hi = train.findIndex(element => element.opuic == end_opuic);
         if (lo != -1 && hi != -1)
             for (let i = lo; i != hi; ++i) {
-                tmp_dataset.push({
+                const timestring = element['dep_soll'];
+                dataset.push({
                     line: line_id,
                     from: start_opuic,
                     to: end_opuic,
-                    time: Date.parse(element['dep_soll']),
-                    timestring: element['dep_soll'],
+                    time: Date.parse(timestring),
+                    timestring: timestring,
                     reservations: parseFloat(element['reserved']),
                     capacity: parseFloat(element['capacity']),
+                    rel_time: (Date.parse(timestring) - Date.parse(timestring.substring(0, 10) + ' 00:00:00')) / 86400000,
                     leisure_idx: null,
                     holiday: 0,
                     weekend: 0
@@ -82,27 +69,23 @@ reservations_records.forEach(element => {
             }
     }
 });
-tmp_dataset.sort((a, b) => {
+dataset.sort((a, b) => {
     if (a.line != b.line) return a.line < b.line;
     else if (a.from != b.from) return a.from < b.from;
     else if (a.to != b.to) return a.to < b.to;
     else return a.time - b.time;
 });
-tmp_dataset.forEach(element => {
-    if (dataset.length == 0) dataset.push(element);
-    else {
-        var last = dataset[dataset.length - 1];
-        if (last.line == element.line && last.from == element.from && last.to == element.to && last.time == element.time)
-            last.reservations += element.reservations;
-        else dataset.push(element);
-    }
+dataset.forEach((element, ind, arr) => {
+    if (ind != 0 && arr[ind - 1].line == element.line && arr[ind - 1].from == element.from && arr[ind - 1].to == element.to && arr[ind - 1].time == element.time)
+        element.reservations += arr[ind - 1].reservations;
+    element.fullness = element.reservations / element.capacity;
 });
 
 
 // import holidays
 const hd_csv = fs.readFileSync(__dirname + '/data/school_holidays_clean.csv');
 const hd_records = csv.parse(hd_csv, { delimiter: ',', columns: true, skip_empty_lines: true });
-console.log(hd_records.length)
+
 let total_pop = 0
 hd_records.forEach(element => {
     let pop = parseInt(element['Population'].split(',').join(''));
@@ -137,12 +120,8 @@ dataset.forEach((element, idx, arr) => {
     arr[idx]['weekend'] = (new Date(element.time)).getDay() >= 5 ? 1 : 0;
 });
 
-//console.log(dataset)
-
-// READY
-
+// import weather data
 stationTimesDict = [];
-
 dataset.forEach(function(element) {
     if (stationTimesDict.length == 0) stationTimesDict.push({station: element.from, dates: new Set([element.timestring.split(' ')[0]])});
     else {
@@ -163,55 +142,14 @@ dataset.forEach(function(element) {
     }
 });
 
-console.log(stationTimesDict.length)
+weather.load();
+stationTimesDict.forEach(weather.queryApi);
 
-
-function sleep(milliseconds) {
-    const date = Date.now();
-    let currentDate = null;
-    do {
-      currentDate = Date.now();
-    } while (currentDate - date < milliseconds);
-  }
-
-
-let stationTimesWeatherDict = {};
-
-let cnt = 0, respC = 0;
-stationTimesDict.forEach((el, idx, arr) => {
-    cnt++;
-
-    let station = 'didok_' + el.station;
-    let dateString = '';
-    Array.from(el.dates).sort().forEach((date) => {
-        dateString += date + 'T12:00:00Z,'
-    });
-    dateString = dateString.slice(0, -1)
-
-    console.log('starting req')
-
-    getLeisureScore(dateString, station).then(data => {
-        // stationTimesWeatherDict[station + date] = data;
-        data.forEach((elres) => {
-            stationTimesWeatherDict[[el.station, elres.date.slice(0,10)]] = elres.value
-        })
-
-    })
-
-    sleep(3000);
-
-    weatherJson = JSON.stringify(stationTimesWeatherDict)
-
-    fs.writeFile("weather.json", weatherJson, 'utf8', function (err) {
-        if (err) {
-            console.log("An error occured while writing JSON Object to File.");
-            return console.log(err);
-        }
-        console.log("JSON file has been saved.");
-    });
-
-    console.log(stationTimesWeatherDict)
+dataset.forEach(element => {
+    element.leisure_idx = Math.max(
+        weather.get(element.from, element.timestring),
+        weather.get(element.to, element.timestring)
+    );
 });
 
-
-
+console.log(dataset[0]);
