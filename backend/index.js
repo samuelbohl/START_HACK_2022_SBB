@@ -1,6 +1,7 @@
 const fs = require("fs");
 const csv = require("csv-parse/lib/sync");
 const { start } = require("repl");
+const skmeans = require('skmeans');
 const weather = require('./weather-api');
 
 var stations = {}; // map abbreviation to OPUIC
@@ -153,3 +154,16 @@ dataset.forEach(element => {
 });
 
 console.log(dataset[0]);
+
+// k-means
+let kmeans_data = [];
+dataset.forEach(element => {
+    kmeans_data.push([
+        element.rel_time,
+        element.leisure_idx,
+        element.holiday,
+        element.weekend
+    ]);
+});
+let kmeans_res = skmeans(kmeans_data, 16);
+
