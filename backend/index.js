@@ -121,31 +121,8 @@ dataset.forEach((element, idx, arr) => {
     arr[idx]['weekend'] = (new Date(element.time)).getDay() >= 5 ? 1 : 0;
 });
 
-// import weather data
-stationTimesDict = [];
-dataset.forEach(function(element) {
-    if (stationTimesDict.length == 0) stationTimesDict.push({station: element.from, dates: new Set([element.timestring.split(' ')[0]])});
-    else {
-        let fromIdx = stationTimesDict.findIndex((el) => el.station == element.from);
-        let toIdx = stationTimesDict.findIndex((el) => el.station == element.to);
-
-        if (fromIdx == -1) {
-            stationTimesDict.push({station: element.from, dates: new Set([element.timestring.split(' ')[0]])});
-        } else {
-            stationTimesDict[fromIdx].dates.add(element.timestring.split(' ')[0])
-        }
-
-        if (toIdx == -1) {
-            stationTimesDict.push({station: element.to, dates: new Set([element.timestring.split(' ')[0]])});
-        } else {
-            stationTimesDict[toIdx].dates.add(element.timestring.split(' ')[0])
-        }
-    }
-});
-
-weather.load();
-stationTimesDict.forEach(weather.queryApi);
-
+// get weather data
+weather.init(dataset);
 dataset.forEach(element => {
     element.leisure_idx = Math.max(
         weather.get(element.from, element.timestring),

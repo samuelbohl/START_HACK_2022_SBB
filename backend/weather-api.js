@@ -19,6 +19,7 @@ let cur = 0;
 let stationTimesWeatherDict = {};
 
 module.exports = {
+    // load saved weather data from save file
     load: function() {
         if (fs.existsSync('./data/weather.json')) {
             stationTimesWeatherDict = JSON.parse(
@@ -27,6 +28,7 @@ module.exports = {
         }
     },
 
+    // save weather data to file
     save: function() {
         let weatherJson = JSON.stringify(stationTimesWeatherDict)
         fs.writeFile("./data/weather.json", weatherJson, 'utf8', function (err) {
@@ -37,35 +39,62 @@ module.exports = {
         });
     },
 
+    init: function(dataset) {
+        module.exports.load();
+
+        stationTimesDict = [];
+        
+        dataset.forEach(function(element) {
+            if (stationTimesDict.length == 0) stationTimesDict.push({station: element.from, dates: new Set([element.timestring.split(' ')[0]])});
+            else {
+                let fromIdx = stationTimesDict.findIndex((el) => el.station == element.from);
+                let toIdx = stationTimesDict.findIndex((el) => el.station == element.to);
+
+                if (fromIdx == -1) {
+                    stationTimesDict.push({station: element.from, dates: new Set([element.timestring.split(' ')[0]])});
+                } else {
+                    stationTimesDict[fromIdx].dates.add(element.timestring.split(' ')[0])
+                }
+
+                if (toIdx == -1) {
+                    stationTimesDict.push({station: element.to, dates: new Set([element.timestring.split(' ')[0]])});
+                } else {
+                    stationTimesDict[toIdx].dates.add(element.timestring.split(' ')[0])
+                }
+            }
+        });
+
+        stationTimesDict.forEach(async el => {
+            let station = 'didok_' + el.station;
+            let dateString = '';
+            Array.from(el.dates).sort().forEach((date) => {
+                if (!([el.station, date] in stationTimesWeatherDict))
+                    dateString += date + 'T12:00:00Z' + ',';
+            });
+            dateString = dateString.slice(0, -1);
+
+            if (dateString.length != 0) {
+                while (cur > 5) await snooze(300);
+                ++cur;
+                getLeisureScore(dateString, station).then(data => {
+                    console.log('Queried weather API for ' + station);
+                    data.forEach((elres) => {
+                        stationTimesWeatherDict[[el.station, elres.date.slice(0,10)]] = elres.value
+                    })
+                    --cur;
+                    // module.exports.save();
+                })
+            }
+        });
+    },
+
+    // returns the leisure_index for a station at some point in time
     get: function(opuic, timestring) {
-        const datestring = timestring.substring(0, 10);
+        const datestring = timestring.substring(0, 10); // time is converted to 12:00:00 of the same day
         if (![opuic, datestring] in stationTimesWeatherDict) {
             console.error([opuic, datestring] + ' not found in weather dict!');
             return 0;
         }
         return stationTimesWeatherDict[[opuic, datestring]];
-    },
-
-    queryApi: async function (el) {        
-        let station = 'didok_' + el.station;
-        let dateString = '';
-        Array.from(el.dates).sort().forEach((date) => {
-            if (!([el.station, date] in stationTimesWeatherDict))
-                dateString += date + 'T12:00:00Z' + ',';
-        });
-        dateString = dateString.slice(0, -1);
-
-        if (dateString.length != 0) {
-            while (cur > 5) await snooze(300);
-            ++cur;
-            getLeisureScore(dateString, station).then(data => {
-                console.log('Queried weather API for ' + station);
-                data.forEach((elres) => {
-                    stationTimesWeatherDict[[el.station, elres.date.slice(0,10)]] = elres.value
-                })
-                --cur;
-                // module.exports.save();
-            })
-        }
     }
 };
