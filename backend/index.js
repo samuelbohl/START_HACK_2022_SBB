@@ -2,7 +2,9 @@ const fs = require("fs");
 const csv = require("csv-parse/lib/sync");
 const { start } = require("repl");
 const skmeans = require('skmeans');
+
 const weather = require('./weather-api');
+const holiday = require('./holidays');
 
 var stations = {}; // map abbreviation to OPUIC
 var trains = {}; // contains all stops and departure/arrival times relative to start of day
@@ -54,22 +56,23 @@ reservations_records.forEach(element => {
         if (lo != -1 && hi != -1)
             for (let i = lo; i != hi; ++i) {
                 const timestring = element['dep_soll'];
+                const time = Date.parse(timestring);
                 dataset.push({
                     line: line_id,
                     from: start_opuic,
                     to: end_opuic,
-                    time: Date.parse(timestring),
+                    time: time,
                     timestring: timestring,
                     reservations: parseFloat(element['reserved']),
                     capacity: parseFloat(element['capacity']),
                     rel_time: (Date.parse(timestring) - Date.parse(timestring.substring(0, 10) + ' 00:00:00')) / 86400000,
-                    leisure_idx: null,
-                    holiday: 0,
-                    weekend: 0
+                    weekend: (new Date(time)).getDay() >= 5 ? 1 : 0
                 });
             }
     }
 });
+
+// prefix sum for reservations on same train ride
 dataset.sort((a, b) => {
     if (a.line != b.line) return a.line < b.line;
     else if (a.from != b.from) return a.from < b.from;
@@ -83,42 +86,9 @@ dataset.forEach((element, ind, arr) => {
 });
 
 
-// import holidays
-const hd_csv = fs.readFileSync(__dirname + '/data/school_holidays_clean.csv');
-const hd_records = csv.parse(hd_csv, { delimiter: ',', columns: true, skip_empty_lines: true });
-
-let total_pop = 0
-hd_records.forEach(element => {
-    let pop = parseInt(element['Population'].split(',').join(''));
-    total_pop += pop;
-});
-
-total_pop = total_pop/2;
-
-hd_records.forEach((element, idx, arr) => {
-    let pop = parseInt(element['Population'].split(',').join(''));
-    arr[idx]['Population'] = pop/total_pop
-    arr[idx]['Spring'] = Date.parse(arr[idx]['Spring'])
-    arr[idx]['SpringEnd'] = Date.parse(arr[idx]['SpringEnd'])
-    arr[idx]['Summer'] = Date.parse(arr[idx]['Summer'])
-    arr[idx]['SummerEnd'] = Date.parse(arr[idx]['SummerEnd'])
-    arr[idx]['Fall'] = Date.parse(arr[idx]['Fall'])
-    arr[idx]['FallEnd'] = Date.parse(arr[idx]['FallEnd'])
-});
-
-dataset.forEach((element, idx, arr) => {
-    let holiday = 0;
-    hd_records.forEach(el => {
-        if (element.time >= el.Spring && element.time <= el.SpringEnd) {
-            holiday += el.Population;
-        } else if (element.time >= el.Summer && element.time <= el.SummerEnd) {
-            holiday += el.Population;
-        } else if (element.time >= el.Fall && element.time <= el.FallEnd) {
-            holiday += el.Population;
-        }
-    });
-    arr[idx]['holiday'] = holiday;
-    arr[idx]['weekend'] = (new Date(element.time)).getDay() >= 5 ? 1 : 0;
+// get holiday data
+dataset.forEach(el => {
+    el.holiday = holiday.get(el);
 });
 
 // get weather data
