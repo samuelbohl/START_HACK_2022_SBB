@@ -170,6 +170,8 @@ function App() {
         <Col span={8}></Col>
     </Row>
 
+    <Connection from={'Bern'} to={'Zurich'} depTime={'13:00'} arrTime={'14:00'} date={'24.04.2022'} />
+    <Connection from={'13:00'} to={'14:00'} />
     <Connection from={'13:00'} to={'14:00'} />
 
     </Form>

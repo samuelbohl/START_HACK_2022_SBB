@@ -1,6 +1,6 @@
 import './App.css';
 // import { useState, useEffect } from 'react';
-import {Slider,  Row, Col} from 'antd';
+import {Slider,  Row, Col, Button} from 'antd';
 
 import { Line } from '@ant-design/plots';
 
@@ -33,6 +33,8 @@ function Connection(props) {
         color: 'red',
     };
 
+    const reservationUrl = 'https://www.sbb.ch/ticketshop/b2c/adw.do?sprache=en&artikelnummer=1966&von=' + props.from + '&nach=' + props.to + '&reiseDatum=' + props.date + '&reiseZeit=' + props.depTime;
+
   return (
     <Row justify='center' style={{backgroundColor: '#f6f6f6', margin: '5px 30px', padding: 10}}>
         <Col span={6} offset={1} style={{marginTop: 20}}>
@@ -49,7 +51,10 @@ function Connection(props) {
             </Row>
         </Col>
         <Col span={4}><Line width={300} height={100} {... config} /></Col>
-        <Col span={6}>Recomended latest reservation time: 09:00</Col>
+        <Col span={4}>Recomended latest reservation time: 09:00</Col>
+        <Col span={2}>
+            <Button type="primary" href={reservationUrl} target="_blank" style={{backgroundColor: '#eb0000', border: 'none', borderRadius: '.13333em', height: '44px', padding: '0.93333em 2.66667em 1em'}}>Reserve Now</Button>
+        </Col>
     </Row>
   );
 }

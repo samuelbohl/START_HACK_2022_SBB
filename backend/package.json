@@ -10,7 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.26.1",
     "csv-parse": "^5.0.4",
-    "esm": "^3.2.25"
+    "esm": "^3.2.25",
+    "express": "^4.17.3",
+    "node-fetch": "^3.2.3"
   }
 }
