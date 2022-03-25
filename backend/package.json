@@ -11,12 +11,13 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.26.1",
+    "axios-oauth-client": "^1.4.4",
     "cors": "^2.8.5",
     "csv-parse": "^5.0.4",
     "esm": "^3.2.25",
     "express": "^4.17.3",
     "node-fetch": "^3.2.3",
-    "skmeans": "^0.11.3",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "skmeans": "^0.11.3"
   }
 }
