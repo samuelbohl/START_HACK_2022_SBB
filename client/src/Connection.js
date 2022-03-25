@@ -38,10 +38,10 @@ function Connection(props) {
     <Row justify='center' style={{backgroundColor: '#f6f6f6', margin: '5px 30px', padding: 10}}>
         <Col span={6} offset={1} style={{marginTop: 20}}>
             <Row>
-                <svg style={{backgroundColor: '27348b', width: 30, height: 30}}>
+                <svg style={{backgroundColor: '#27348b', width: 30, height: 30}}>
                     <use href="#SBB_oev_b_t02" backgroundColor="27348b" fill='white'></use>
                 </svg>
-                <svg style={{backgroundColor: 'eb0000', width: 90, height: 30, marginLeft: 5}}>
+                <svg style={{backgroundColor: '#eb0000', width: 90, height: 30, marginLeft: 5}}>
                     <use href={"#SBB_product_" + props.trainName} fill='white'></use>
                 </svg>
             </Row>
