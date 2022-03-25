@@ -36,7 +36,8 @@ module.exports = {
                 }
             });
             dataset_el.metrics.push(holiday_metric); // holiday
-            dataset_el.metrics.push((new Date(dataset_el.time)).getDay() >= 5 ? 1 : 0); // weekend
+            const day = (new Date(dataset_el.time)).getDay();
+            dataset_el.metrics.push(day == 0 || day == 6 ? 1 : 0); // weekend
     },
     augment_dataset: function(dataset) {
         dataset.forEach(module.exports.augment);

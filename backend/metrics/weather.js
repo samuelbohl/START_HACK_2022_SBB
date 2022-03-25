@@ -71,7 +71,6 @@ async function get(opuic, timestring) {
         const timestring = datestring + 'T12:00:00Z';
         await getLeisureScore(timestring, station);
     }
-
     return stationTimesWeatherDict[[opuic, datestring]];
 }
 
@@ -84,7 +83,7 @@ module.exports = {
         dataset_el.metrics.push(tmp);
     },
     // must be called before augment
-    augment_dataset: function(dataset) {
+    augment_dataset: async function(dataset) {
         load();
 
         stationTimesDict = [];
@@ -121,6 +120,6 @@ module.exports = {
                 getLeisureScore(dateString, station)
         });
 
-        dataset.forEach(module.exports.augment);
+        await dataset.forEach(module.exports.augment);
     }
 };

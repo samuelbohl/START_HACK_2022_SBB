@@ -96,8 +96,6 @@ for (let i = 1; i < dataset.length; ++i) {
     }
 }
 
-// for (let i = 1; i < 5; ++i) console.log(dataset[i], compareDatasetElement(dataset[i - 1], dataset[i]));
-
 // add metrics
 time_metric.augment_dataset(dataset);
 holiday_metric.augment_dataset(dataset);
@@ -109,6 +107,7 @@ let kmeans_res = {};
 
 dataset.forEach(dataset_el => {
     let key = [
+        dataset_el.metrics[2],
         dataset_el.train_nr,
         dataset_el.from,
         dataset_el.to
@@ -137,7 +136,10 @@ async function short_predict(train_nr, from, to, timestring, reservations) {
     holiday_metric.augment(dataset_el);
     await weather_metric.augment(dataset_el);
 
+    console.log(dataset_el);
+
     const key = [
+        dataset_el.metrics[2],
         dataset_el.train_nr,
         dataset_el.from,
         dataset_el.to
@@ -163,11 +165,11 @@ async function short_predict(train_nr, from, to, timestring, reservations) {
     
     let fullness = 0, tot = 0, density = [];
     tmp.forEach(el => {
-        fullness += el.fullness;
+        fullness = Math.max(fullness, Math.min(1, el.fullness));
         ++tot;
         density.push({
             delta: el.delta,
-            prob: fullness / tot
+            prob: fullness
         });
     })
     return density;
