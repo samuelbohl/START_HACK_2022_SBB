@@ -33,7 +33,7 @@ async function getLeisureScore(timestamp, uid) {
 
     let data = {};
     await response.then(response => {data = response.data.data[0].coordinates[0].dates})
-    // console.log('Queried weather API for ' + uid);
+    console.log('Queried weather API for ' + uid);
     data.forEach(elres => {
         let station = uid.substring(6);
         // console.log([station, elres.date.slice(0,10)] + ' = ' + elres.value);
