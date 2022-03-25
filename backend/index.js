@@ -197,12 +197,7 @@ async function predict(train_nr, from, to, timestring, reservations) {
     density.sort((a, b) => a.delta - b.delta);
     for (let i = 1; i < density.length; ++i)
         density[i].prob = Math.max(density[i].prob, density[i - 1].prob);
-    let result = [];
-    if (density[0].delta > -259200000) result.push({delta: -259200000, prob: 0});
-    density.forEach(el => {
-        if (el.delta >= -259200000 && el.delta <= 0) result.push(el);
-    })
-    return result;
+    return density.filter(el => el.delta > -86400000 && el.delta < 0);
 }
 
 // predict(520, '8506000', '8506302', '2022-03-20 10:00:00', 6);
