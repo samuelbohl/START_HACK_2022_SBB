@@ -24,14 +24,14 @@ const trains_records = csv.parse(trains_csv, { delimiter: ';', columns: true, sk
 trains_records.forEach(element => {
     const train_id = parseInt(element['Linie']);
     const opuic = element['OPUIC'];
-    let time = element['Arrival time'].length != 0
-        ? Date.parse(element['Arrival time'])
-        : Date.parse(element['Departure time']);
+    let timestring = element['Arrival time'].length ? element['Arrival time'] : element['Departure time'];
+    let time = Date.parse(timestring);
     time -= Date.parse(element['Day of operation']);
     if (trains[train_id] == undefined) trains[train_id] = [];
     trains[train_id].push({
         opuic: opuic,
-        time: time
+        time: time,
+        timestring: timestring.substring(11)
     });
 });
 for (let train_id in trains) {
@@ -56,7 +56,7 @@ reservations_records.forEach(element => {
         const hi = train.findIndex(element => element.opuic == end_opuic);
         if (lo != -1 && hi != -1)
             for (let i = lo; i != hi; ++i) {
-                const timestring = element['dep_soll'];
+                const timestring = element['date'].substring(0, 10) + ' ' + train[i].timestring;
                 dataset.push({
                     line: line_id,
                     train_nr: element['train_nr'],
@@ -75,25 +75,33 @@ reservations_records.forEach(element => {
 
 // prefix sum for reservations on same train ride
 function compareDatasetElement(a, b) {
-    if (a.line != b.line) return a.line.localeCompare(b.line);
-    else if (a.train_nr != b.train_nr) return a.train_nr.localeCompare(b.train_nr);
-    else if (a.from != b.from) return a.from.localeCompare(b.from);
-    else if (a.to != b.to) return a.to.localeCompare(b.to);
+    if (a.train_nr.localeCompare(b.train_nr)) return a.train_nr.localeCompare(b.train_nr);
+    else if (a.from.localeCompare(b.from)) return a.from.localeCompare(b.from);
+    else if (a.to.localeCompare(b.to)) return a.to.localeCompare(b.to);
+    else if (a.time != b.time) return a.time - b.time;
+    else return a.res_time - b.res_time;
+}
+
+function compareDatasetElement2(a, b) {
+    if (a.train_nr.localeCompare(b.train_nr)) return a.train_nr.localeCompare(b.train_nr);
+    else if (a.from.localeCompare(b.from)) return a.from.localeCompare(b.from);
+    else if (a.to.localeCompare(b.to)) return a.to.localeCompare(b.to);
     else return a.time - b.time;
 }
+
 dataset.sort(compareDatasetElement);
-dataset.forEach((element, ind, arr) => {
-    if (ind != 0 && compareDatasetElement(arr[ind - 1], element) == 0)
-        element.reservations += arr[ind - 1].reservations;
-    element.fullness = element.reservations / element.capacity;
-});
+for (let i = 1; i < dataset.length; ++i) {
+    if (compareDatasetElement2(dataset[i], dataset[i - 1]) == 0) {
+        dataset[i].reservations += dataset[i - 1].reservations;
+    }
+}
+
+// for (let i = 1; i < 5; ++i) console.log(dataset[i], compareDatasetElement(dataset[i - 1], dataset[i]));
 
 // add metrics
 time_metric.augment_dataset(dataset);
 holiday_metric.augment_dataset(dataset);
 weather_metric.augment_dataset(dataset);
-
-console.log(dataset[0]);
 
 // predict
 let kmeans_data = {};
@@ -101,6 +109,7 @@ let kmeans_res = {};
 
 dataset.forEach(dataset_el => {
     let key = [
+        dataset_el.train_nr,
         dataset_el.from,
         dataset_el.to
     ];
@@ -129,6 +138,7 @@ async function short_predict(train_nr, from, to, timestring, reservations) {
     await weather_metric.augment(dataset_el);
 
     const key = [
+        dataset_el.train_nr,
         dataset_el.from,
         dataset_el.to
     ];
@@ -136,24 +146,25 @@ async function short_predict(train_nr, from, to, timestring, reservations) {
     if (kmeans_res[key] == undefined) {
         if (kmeans_data[key] == undefined) return [{delta: 0, prob: -1}];
         const size = kmeans_data[key].metrics.length;
-        kmeans_res[key] = skmeans(kmeans_data[key].metrics, Math.min(size, 8));
+        kmeans_res[key] = skmeans(kmeans_data[key].metrics, Math.min(size, 4));
     }
 
     let cluster = kmeans_res[key].test(dataset_el.metrics);
     let tmp = [];
     kmeans_data[key].trace.forEach((dataset_el, ind) => {
-        if (kmeans_res[key].idxs[ind] == cluster.idx)
+        if (kmeans_res[key].idxs[ind] == cluster.idx) {
             tmp.push({
                 delta: dataset_el.res_time - dataset_el.time,
                 fullness: dataset_el.reservations / dataset_el.capacity
             });
+        }
     });
     tmp.sort((a, b) => a.delta - b.delta);
     
     let fullness = 0, tot = 0, density = [];
     tmp.forEach(el => {
-        if (!el.fullness) console.log(dataset_el)
-        ++tot; fullness+= el.fullness
+        fullness += el.fullness;
+        ++tot;
         density.push({
             delta: el.delta,
             prob: fullness / tot
@@ -186,11 +197,15 @@ async function predict(train_nr, from, to, timestring, reservations) {
     density.sort((a, b) => a.delta - b.delta);
     for (let i = 1; i < density.length; ++i)
         density[i].prob = Math.max(density[i].prob, density[i - 1].prob);
-    console.log(density);
-    return density;
+    let result = [];
+    if (density[0].delta > -259200000) result.push({delta: -259200000, prob: 0});
+    density.forEach(el => {
+        if (el.delta >= -259200000 && el.delta <= 0) result.push(el);
+    })
+    return result;
 }
 
-predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 6);
+// predict(520, '8506000', '8506302', '2022-03-20 10:00:00', 6);
 
 // API
 
@@ -198,6 +213,7 @@ const express = require("express");
 const path = require("path");
 const app = express();
 const cors = require('cors');
+const { resourceLimits } = require("worker_threads");
 const port = process.env.PORT || "8000";
 
 app.use(cors());
