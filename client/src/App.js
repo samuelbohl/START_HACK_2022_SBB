@@ -186,7 +186,7 @@ function App() {
 
     {trips.filter((trip) => trip.from.time_str >= addZero(moment(time).hours()) + ':' + addZero(moment(time).minutes()))
     .slice(0, 5)
-    .map(trip => <Connection key={Math.random()} depTime={trip.from.time_str} arrTime={trip.to.time_str} trainName={trip.train_name} from={from} to={to} date={date} />)}
+    .map(trip => <Connection key={Math.random()} fromId={trip.from.opuic} toId={trip.to.opuic} depTime={trip.from.time_str} arrTime={trip.to.time_str} trainNum={trip.train} trainName={trip.train_name} from={from} to={to} date={date} />)}
 
     </Form>
       </Content>

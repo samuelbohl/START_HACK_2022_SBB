@@ -1,5 +1,6 @@
 import './App.css';
-// import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {Slider,  Row, Col, Button} from 'antd';
 import moment from 'moment';
 import { Line } from '@ant-design/plots';
@@ -8,12 +9,23 @@ import { Line } from '@ant-design/plots';
 function Connection(props) {
 
 
-    const data = [{time: '2020', value: 1},{time: '2021', value: 0.8},{time: '2022', value: 0.3},{time: '2023', value: 0.1}];
+    // const data = [{time: '2020', value: 1},{time: '2021', value: 0.8},{time: '2022', value: 0.3},{time: '2023', value: 0.1}];
+
+    const [data, setData] = useState([]);
+
+    useEffect(() => {
+        //prob/:train/:fromId/:toId/:bikes
+        axios.get('http://localhost:8000/prob/' + props.trainNum + '/' + props.fromId + '/' + props.toId + '/' + '1', {mode: 'no-cors'})
+        .then(res => {
+            setData(() => res.data.map((el) => ({...el, delta: el.delta/60000})))
+            console.log(res.data)
+        })
+    }, [])
 
     const config = {
         data,
-        xField: 'time',
-        yField: 'value',
+        xField: 'delta',
+        yField: 'prob',
         smooth: true,
         color: 'red',
     };

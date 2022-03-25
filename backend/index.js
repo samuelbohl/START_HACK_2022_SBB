@@ -60,8 +60,8 @@ reservations_records.forEach(element => {
                 dataset.push({
                     line: line_id,
                     train_nr: element['train_nr'],
-                    from: start_opuic,
-                    to: end_opuic,
+                    from: train[i].opuic,
+                    to: train[i + 1].opuic,
                     time: Date.parse(timestring),
                     res_time: Date.parse(element['res_dt']),
                     timestring: timestring,
@@ -145,18 +145,18 @@ async function short_predict(train_nr, from, to, timestring, reservations) {
         if (kmeans_res[key].idxs[ind] == cluster.idx)
             tmp.push({
                 delta: dataset_el.res_time - dataset_el.time,
-                free: dataset_el.capacity - dataset_el.reservations
+                fullness: dataset_el.reservations / dataset_el.capacity
             });
     });
     tmp.sort((a, b) => a.delta - b.delta);
     
-    let ok = 0, tot = 0, density = [];
+    let fullness = 0, tot = 0, density = [];
     tmp.forEach(el => {
-        ++tot;
-        if (el.free >= reservations) ++ok;
+        if (!el.fullness) console.log(dataset_el)
+        ++tot; fullness+= el.fullness
         density.push({
             delta: el.delta,
-            prob: ok / tot
+            prob: fullness / tot
         });
     })
     return density;
@@ -185,12 +185,12 @@ async function predict(train_nr, from, to, timestring, reservations) {
 
     density.sort((a, b) => a.delta - b.delta);
     for (let i = 1; i < density.length; ++i)
-        density[i].prob = Math.min(density[i].prob, density[i - 1].prob);
+        density[i].prob = Math.max(density[i].prob, density[i - 1].prob);
     console.log(density);
     return density;
 }
 
-predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 1);
+predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 6);
 
 // API
 
@@ -276,6 +276,21 @@ app.get("/trips/:fromId", (req, res) => {
     }
 
     res.status(200).send(JSON.stringify(trips));
+});
+
+// Returns the probability distribution for
+app.get("/prob/:train/:fromId/:toId/:bikes", async (req, res) => {
+
+    const trainId = req.params.train
+    const fromId = req.params.fromId
+    const toId = req.params.toId
+    const bikes = req.params.bikes
+
+    console.log(trainId, fromId, toId, bikes)
+
+    const result = await predict(trainId, fromId, toId, '2021-08-21 19:00:00', parseInt(bikes))
+
+    res.status(200).send(JSON.stringify(result));
 });
 
 app.listen(port, () => {
