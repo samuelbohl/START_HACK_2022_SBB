@@ -2,6 +2,7 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import { Layout, Form, Button, Select, Row, Col, DatePicker, TimePicker} from 'antd';
 import axios from 'axios';
+import moment from 'moment';
 import Connection from './Connection';
 
 // import { useState } from 'react/cjs/react.production.min';
@@ -13,17 +14,25 @@ const { Header, Content, Footer } = Layout;
 function App() {
 
   const [stations, setStations] = useState([]);
+  const [dest, setDest] = useState([]);
 
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
   const [trips, setTrips] = useState([]);
+  const [date, setDate] = useState();
+  const [time, setTime] = useState();
 
   useEffect(() => {
     axios.get('http://localhost:8000/stations', {mode: 'no-cors'})
     .then(res => {
       setStations(()=> res.data)
+      setDest(()=> res.data)
     })
   }, []);
+
+  const addZero = (num) => {
+    return num < 10 ? '0' + num : num;
+  }
 
 
   const onFinish = (values) => {
@@ -31,13 +40,11 @@ function App() {
 
     axios.get('http://localhost:8000/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
     .then(res => {
-      values.to
-      setFrom(() => values.from)
-      setTo(() => values.to)
+      setFrom(() => stations.find((station) => station.id == values.from).name)
+      setTo(() => stations.find((station) => station.id == values.to).name)
       setTrips(()=> res.data)
+      setDate(() => values.date)
     })
-
-
   };
 
   const onFinishFailed = (errorInfo) => {
@@ -73,8 +80,13 @@ function App() {
         showSearch
         placeholder="From"
         optionFilterProp="children"
-        onChange={() => {} }
-        onSearch={() => {}}
+        onChange={(value) => {
+          axios.get('http://localhost:8000/trips/' + value, {mode: 'no-cors'})
+          .then(res => {
+            let data = new Set(res.data);
+            setDest(() => stations.filter((el) => data.has(el.id) ))
+          })
+        }}
         filterOption={(input, option) =>
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
@@ -96,14 +108,12 @@ function App() {
         showSearch
         placeholder="To"
         optionFilterProp="children"
-        onChange={() => {} }
-        onSearch={() => {}}
         filterOption={(input, option) =>
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
         style={{height: '3.2em'}}
       >
-        {stations.map(item => (
+        {dest.map(item => (
           <Select.Option key={item.id} value={item.id}>
             {item.name}
           </Select.Option>
@@ -113,7 +123,7 @@ function App() {
       </Col>
       <Col span={2}>
       <Form.Item
-        name="dateFrom"
+        name="date"
       >
         <DatePicker style={{height: '3.2em'}} />
       </Form.Item>
@@ -122,7 +132,7 @@ function App() {
       <Form.Item
         name="timeFrom"
       >
-        <TimePicker style={{height: '3.2em'}} />
+        <TimePicker value={time} style={{height: '3.2em'}} onChange={(val) => setTime(val)} />
       </Form.Item>
       </Col>
       <Col span={2}>
@@ -158,46 +168,32 @@ function App() {
 
     <Row style={{marginBottom: 50}}>
     <Col span={8}></Col>
-    {from != null && to != null &&
-      <Col span={8} style={{fontSize: 40}}>
+    {from != null &&
+      <Col span={8} style={{fontSize: 40, textAlign: 'center'}}>
 
-      {from.name}
+      {from}
 
       <svg style={{ width: '0.8em', height: '1.6em', margin: '-.125em auto -.46667em'}}>
         <use href="#SBB_08_arrow_down" fill='black'></use>
       </svg>
 
-      {to.name}
+      {to}
 
     </Col>
     }
         <Col span={8}></Col>
     </Row>
 
-    {trips.map(trip => <Connection key={Math.random()} depTime={trip.from.time} arrTime={trip.to.time} trainName={trip.train_name} />)}
+    {trips.filter((trip) => trip.from.time_str >= addZero(moment(time).hours()) + ':' + addZero(moment(time).minutes()))
+    .slice(0, 5)
+    .map(trip => <Connection key={Math.random()} depTime={trip.from.time_str} arrTime={trip.to.time_str} trainName={trip.train_name} from={from} to={to} date={date} />)}
 
     </Form>
       </Content>
-      <Footer style={{padding: 0}}></Footer>
+      <Footer style={{textAlign: 'center', backgroundColor: 'white'}}>START HACK 2022</Footer>
     </Layout>
   );
 }
-
-// function AllStationsOfASection(startId, endId, line) {
-//   const [stations, setStations] = useState([]);
-
-//   axios.get('https://data.sbb.ch/api/records/1.0/search/?dataset=linie-mit-betriebspunkten&q=&rows=-1&sort=-linie&facet=abkurzung_bpk&facet=linie&facet=linienname')
-//     .then(res => {
-//       const data = res.data.records.map(el => {return {key : el.fields.bpuic, line: el.fields.linie, km: el.fields.km}; });
-//       let startStation = data.find(obj => obj.key == startId)
-//       let endStation = data.find(obj => obj.key == endId)
-//       let stations = data.filter((el) => el.line == line && el.km <= endStation.km && el.km >= startStation.km)
-//       setStations(()=> stations)
-//     })
-
-//     console.log(stations)
-//     return stations;
-// }
 
 // Requirements:
 // - get all available Stations
