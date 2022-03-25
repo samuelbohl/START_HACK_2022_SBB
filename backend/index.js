@@ -279,16 +279,17 @@ app.get("/trips/:fromId", (req, res) => {
 });
 
 // Returns the probability distribution for
-app.get("/prob/:train/:fromId/:toId/:bikes", async (req, res) => {
+app.get("/prob/:train/:fromId/:toId/:date/:bikes", async (req, res) => {
 
     const trainId = req.params.train
     const fromId = req.params.fromId
     const toId = req.params.toId
+    const date = req.params.date
     const bikes = req.params.bikes
 
     console.log(trainId, fromId, toId, bikes)
 
-    const result = await predict(trainId, fromId, toId, '2021-08-21 19:00:00', parseInt(bikes))
+    const result = await predict(trainId, fromId, toId, date + ' 19:00:00', parseInt(bikes))
 
     res.status(200).send(JSON.stringify(result));
 });

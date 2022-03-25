@@ -15,7 +15,7 @@ function Connection(props) {
 
     useEffect(() => {
         //prob/:train/:fromId/:toId/:bikes
-        axios.get('http://localhost:8000/prob/' + props.trainNum + '/' + props.fromId + '/' + props.toId + '/' + '1', {mode: 'no-cors'})
+        axios.get('http://localhost:8000/prob/' + props.trainNum + '/' + props.fromId + '/' + props.toId + '/' + moment(props.date).format("YYYY-MM-DD") + '/1', {mode: 'no-cors'})
         .then(res => {
             setData(() => res.data.map((el) => ({...el, delta: el.delta/60000})))
             console.log(res.data)
