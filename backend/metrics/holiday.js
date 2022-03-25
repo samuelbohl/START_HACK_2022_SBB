@@ -24,9 +24,8 @@ hd_records.forEach((element, idx, arr) => {
 });
 
 module.exports = {
-    augment: function(dataset) {
-        dataset.forEach(dataset_el => {
-            let holiday_metric = 0;
+    augment: function(dataset_el) {
+        let holiday_metric = 0;
             hd_records.forEach(el => {
                 if (dataset_el.time >= el.Spring && dataset_el.time <= el.SpringEnd) {
                     holiday_metric += el.Population;
@@ -38,6 +37,8 @@ module.exports = {
             });
             dataset_el.metrics.push(holiday_metric); // holiday
             dataset_el.metrics.push((new Date(dataset_el.time)).getDay() >= 5 ? 1 : 0); // weekend
-        });
+    },
+    augment_dataset: function(dataset) {
+        dataset.forEach(module.exports.augment);
     }
 }

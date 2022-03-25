@@ -57,12 +57,13 @@ reservations_records.forEach(element => {
         if (lo != -1 && hi != -1)
             for (let i = lo; i != hi; ++i) {
                 const timestring = element['dep_soll'];
-                const time = Date.parse(timestring);
                 dataset.push({
                     line: line_id,
+                    train_nr: element['train_nr'],
                     from: start_opuic,
                     to: end_opuic,
-                    time: time,
+                    time: Date.parse(timestring),
+                    res_time: Date.parse(element['res_dt']),
                     timestring: timestring,
                     reservations: parseFloat(element['reserved']),
                     capacity: parseFloat(element['capacity']),
@@ -73,40 +74,119 @@ reservations_records.forEach(element => {
 });
 
 // prefix sum for reservations on same train ride
-dataset.sort((a, b) => {
-    if (a.line != b.line) return a.line < b.line;
-    else if (a.from != b.from) return a.from < b.from;
-    else if (a.to != b.to) return a.to < b.to;
+function compareDatasetElement(a, b) {
+    if (a.line != b.line) return a.line.localeCompare(b.line);
+    else if (a.train_nr != b.train_nr) return a.train_nr.localeCompare(b.train_nr);
+    else if (a.from != b.from) return a.from.localeCompare(b.from);
+    else if (a.to != b.to) return a.to.localeCompare(b.to);
     else return a.time - b.time;
-});
+}
+dataset.sort(compareDatasetElement);
 dataset.forEach((element, ind, arr) => {
-    if (ind != 0 && arr[ind - 1].line == element.line && arr[ind - 1].from == element.from && arr[ind - 1].to == element.to && arr[ind - 1].time == element.time)
+    if (ind != 0 && compareDatasetElement(arr[ind - 1], element) == 0)
         element.reservations += arr[ind - 1].reservations;
     element.fullness = element.reservations / element.capacity;
 });
 
 // add metrics
-time_metric.augment(dataset);
-holiday_metric.augment(dataset);
-weather_metric.augment(dataset);
+time_metric.augment_dataset(dataset);
+holiday_metric.augment_dataset(dataset);
+weather_metric.augment_dataset(dataset);
 
 console.log(dataset[0]);
 
-// k-means
-let kmeans_data = [];
-dataset.forEach(element => {
-    kmeans_data.push([
-        element.rel_time,
-        element.leisure_idx,
-        element.holiday,
-        element.weekend
-    ]);
-});
-let kmeans_res = skmeans(kmeans_data, 16);
+// predict
+let kmeans_data = {};
+let kmeans_res = {};
 
-function short_trip_density(line, from, to, time) {
+dataset.forEach(dataset_el => {
+    let key = [
+        dataset_el.from,
+        dataset_el.to
+    ];
+    if (kmeans_data[key] == undefined)
+        kmeans_data[key] = {
+            trace: [],
+            metrics: []
+        };
+    kmeans_data[key].trace.push(dataset_el);
+    kmeans_data[key].metrics.push(dataset_el.metrics);
+});
+
+console.log("Preprocessing done.");
+
+function short_predict(train_nr, from, to, timestring, reservations) {
+    let dataset_el = {
+        train_nr: train_nr,
+        from: from,
+        to: to,
+        time: Date.parse(timestring),
+        timestring: timestring,
+        metrics: []
+    };
+    time_metric.augment(dataset_el);
+    holiday_metric.augment(dataset_el);
+    weather_metric.augment(dataset_el);
+
+    const key = [
+        dataset_el.from,
+        dataset_el.to
+    ];
+
+    if (kmeans_res[key] == undefined) {
+        kmeans_res[key] = skmeans(kmeans_data[key].metrics, 16);
+    }
+
+    let cluster = kmeans_res[key].test(dataset_el.metrics);
+    let tmp = [];
+    kmeans_data[key].trace.forEach((dataset_el, ind) => {
+        if (kmeans_res[key].idxs[ind] == cluster.idx)
+            tmp.push({
+                delta: dataset_el.res_time - dataset_el.time,
+                free: dataset_el.capacity - dataset_el.reservations
+            });
+    });
+    tmp.sort((a, b) => a.delta - b.delta);
     
+    let ok = 0, tot = 0, density = [];
+    tmp.forEach(el => {
+        ++tot;
+        if (el.free >= reservations) ++ok;
+        density.push({
+            delta: el.delta,
+            prob: ok / tot
+        });
+    })
+    return density;
 }
+
+function predict(train_nr, from, to, timestring, reservations) {
+    let from_ind = trains[train_nr].findIndex(el => el.opuic == from);
+    let to_ind = trains[train_nr].findIndex(el => el.opuic == to);
+    if (from_ind == -1 || to_ind == -1) {
+        console.log('No data for ' + from_ind + ' to ' + to_ind);
+        return [{delta: 0, prob: -1}];
+    }
+    let density = [];
+    if (from_ind < to_ind)
+        for (let i = from_ind; i != to_ind; ++i) {
+            let cur = trains[train_nr][i].opuic;
+            let nxt = trains[train_nr][i + 1].opuic;
+            short_predict(train_nr, cur, nxt, timestring, reservations).forEach(el => density.push(el));
+        }
+    else
+        for (let i = from_ind; i != to_ind; --i) {
+            let cur = trains[train_nr][i].opuic;
+            let nxt = trains[train_nr][i - 1].opuic;
+            short_predict(train_nr, cur, nxt, timestring, reservations).forEach(el => density.push(el));
+        }
+    density.sort((a, b) => a.delta - b.delta);
+    for (let i = 1; i < density.length; ++i)
+        density[i].prob = Math.min(density[i].prob, density[i - 1].prob);
+    return density;
+}
+
+console.log(predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 1));
 
 // API
 
