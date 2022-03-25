@@ -9,12 +9,9 @@ import { Line } from '@ant-design/plots';
 function Connection(props) {
 
 
-    // const data = [{time: '2020', value: 1},{time: '2021', value: 0.8},{time: '2022', value: 0.3},{time: '2023', value: 0.1}];
-
     const [data, setData] = useState([]);
 
     useEffect(() => {
-        //prob/:train/:fromId/:toId/:bikes
         axios.get('http://localhost:8000/prob/' + props.trainNum + '/' + props.fromId + '/' + props.toId + '/' + moment(props.date).format("YYYY-MM-DD") + '/1', {mode: 'no-cors'})
         .then(res => {
             setData(() => res.data.map((el) => ({...el, delta: el.delta/60000})))
@@ -50,7 +47,7 @@ function Connection(props) {
             </Row>
         </Col>
         <Col span={4}><Line width={300} height={100} {... config} /></Col>
-        <Col span={4} style={{fontSize: 16, textAlign: 'center', paddingTop: 28}}>Recomended latest reservation time: 09:00</Col>
+        <Col span={4} style={{fontSize: 16, textAlign: 'center', paddingTop: 28}}>Recomended latest reservation time: {props.depTime}</Col>
         <Col span={2} style={{paddingTop: 32}}>
             <Button type="primary" href={reservationUrl} target="_blank" style={{backgroundColor: '#eb0000', border: 'none', borderRadius: '.13333em', height: '44px', padding: '1em 2.66667em 1em'}}>Reserve Now</Button>
         </Col>
