@@ -1,7 +1,7 @@
 const fs = require('fs');
 const csv = require("csv-parse/lib/sync");
 
-const hd_csv = fs.readFileSync(__dirname + '/data/school_holidays_clean.csv');
+const hd_csv = fs.readFileSync('./data/school_holidays_clean.csv');
 const hd_records = csv.parse(hd_csv, { delimiter: ',', columns: true, skip_empty_lines: true });
 
 let total_pop = 0
@@ -24,19 +24,20 @@ hd_records.forEach((element, idx, arr) => {
 });
 
 module.exports = {
-    get: function(dataset_el) {
-        let res = 0;
-        hd_records.forEach(el => {
-            if (dataset_el.time >= el.Spring && dataset_el.time <= el.SpringEnd) {
-                res += el.Population;
-            } else if (dataset_el.time >= el.Summer && dataset_el.time <= el.SummerEnd) {
-                res += el.Population;
-            } else if (dataset_el.time >= el.Fall && dataset_el.time <= el.FallEnd) {
-                res += el.Population;
-            }
+    augment: function(dataset) {
+        dataset.forEach(dataset_el => {
+            let holiday_metric = 0;
+            hd_records.forEach(el => {
+                if (dataset_el.time >= el.Spring && dataset_el.time <= el.SpringEnd) {
+                    holiday_metric += el.Population;
+                } else if (dataset_el.time >= el.Summer && dataset_el.time <= el.SummerEnd) {
+                    holiday_metric += el.Population;
+                } else if (dataset_el.time >= el.Fall && dataset_el.time <= el.FallEnd) {
+                    holiday_metric += el.Population;
+                }
+            });
+            dataset_el.metrics.push(holiday_metric); // holiday
+            dataset_el.metrics.push((new Date(dataset_el.time)).getDay() >= 5 ? 1 : 0); // weekend
         });
-        return res;
-        // dataset_el.holiday = res;
-        // dataset_el.weekend = (new Date(dataset_el.time)).getDay() >= 5 ? 1 : 0;
     }
 }

@@ -3,8 +3,9 @@ const csv = require("csv-parse/lib/sync");
 const { start } = require("repl");
 const skmeans = require('skmeans');
 
-const weather = require('./weather-api');
-const holiday = require('./holidays');
+const time_metric = require('./metrics/time');
+const holiday_metric = require('./metrics/holiday');
+const weather_metric = require('./metrics/weather');
 
 var stations = {}; // map abbreviation to OPUIC
 var trains = {}; // contains all stops and departure/arrival times relative to start of day
@@ -65,8 +66,7 @@ reservations_records.forEach(element => {
                     timestring: timestring,
                     reservations: parseFloat(element['reserved']),
                     capacity: parseFloat(element['capacity']),
-                    rel_time: (Date.parse(timestring) - Date.parse(timestring.substring(0, 10) + ' 00:00:00')) / 86400000,
-                    weekend: (new Date(time)).getDay() >= 5 ? 1 : 0
+                    metrics: []
                 });
             }
     }
@@ -85,20 +85,10 @@ dataset.forEach((element, ind, arr) => {
     element.fullness = element.reservations / element.capacity;
 });
 
-
-// get holiday data
-dataset.forEach(el => {
-    el.holiday = holiday.get(el);
-});
-
-// get weather data
-weather.init(dataset);
-dataset.forEach(element => {
-    element.leisure_idx = Math.max(
-        weather.get(element.from, element.timestring),
-        weather.get(element.to, element.timestring)
-    );
-});
+// add metrics
+time_metric.augment(dataset);
+holiday_metric.augment(dataset);
+weather_metric.augment(dataset);
 
 console.log(dataset[0]);
 
@@ -113,6 +103,10 @@ dataset.forEach(element => {
     ]);
 });
 let kmeans_res = skmeans(kmeans_data, 16);
+
+function short_trip_density(line, from, to, time) {
+    
+}
 
 // API
 

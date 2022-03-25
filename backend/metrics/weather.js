@@ -13,34 +13,41 @@ async function getLeisureScore(timestamp, uid) {
     return data;
 }
 
+function load() {
+    if (fs.existsSync('./data/weather.json')) {
+        stationTimesWeatherDict = JSON.parse(
+            fs.readFileSync('./data/weather.json')
+        );
+    }
+}
+
+function save() {
+    let weatherJson = JSON.stringify(stationTimesWeatherDict)
+    fs.writeFile("./data/weather.json", weatherJson, 'utf8', function (err) {
+        if (err) {
+            console.log("An error occured while writing JSON Object to File.");
+            return console.log(err);
+        }
+    });
+}
+
 const snooze = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 let cur = 0;
 let stationTimesWeatherDict = {};
 
+function get(opuic, timestring) {
+    const datestring = timestring.substring(0, 10); // time is converted to 12:00:00 of the same day
+    if (![opuic, datestring] in stationTimesWeatherDict) {
+        console.error([opuic, datestring] + ' not found in weather dict!');
+        return 0;
+    }
+    return stationTimesWeatherDict[[opuic, datestring]];
+}
+
 module.exports = {
-    // load saved weather data from save file
-    load: function() {
-        if (fs.existsSync('./data/weather.json')) {
-            stationTimesWeatherDict = JSON.parse(
-                fs.readFileSync('./data/weather.json')
-            );
-        }
-    },
-
-    // save weather data to file
-    save: function() {
-        let weatherJson = JSON.stringify(stationTimesWeatherDict)
-        fs.writeFile("./data/weather.json", weatherJson, 'utf8', function (err) {
-            if (err) {
-                console.log("An error occured while writing JSON Object to File.");
-                return console.log(err);
-            }
-        });
-    },
-
-    init: function(dataset) {
-        module.exports.load();
+    augment: function(dataset) {
+        load();
 
         stationTimesDict = [];
         
@@ -86,15 +93,13 @@ module.exports = {
                 })
             }
         });
-    },
 
-    // returns the leisure_index for a station at some point in time
-    get: function(opuic, timestring) {
-        const datestring = timestring.substring(0, 10); // time is converted to 12:00:00 of the same day
-        if (![opuic, datestring] in stationTimesWeatherDict) {
-            console.error([opuic, datestring] + ' not found in weather dict!');
-            return 0;
-        }
-        return stationTimesWeatherDict[[opuic, datestring]];
+        dataset.forEach(dataset_el => {
+            // leisure index
+            dataset_el.metrics.push(Math.max(
+                get(dataset_el.from, dataset_el.timestring),
+                get(dataset_el.to, dataset_el.timestring)
+            ));
+        });
     }
 };
