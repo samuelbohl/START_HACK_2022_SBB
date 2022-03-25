@@ -62,3 +62,11 @@
   height: 44px !important;
 }
 
+.ant-btn > span { 
+  padding-top: 0.5em;
+}
+
+.ant-btn-primary > span {
+  padding-top: 0;
+}
+
