@@ -134,7 +134,9 @@ function short_predict(train_nr, from, to, timestring, reservations) {
     ];
 
     if (kmeans_res[key] == undefined) {
-        kmeans_res[key] = skmeans(kmeans_data[key].metrics, 16);
+        if (kmeans_data[key] == undefined) return [{delta: 0, prob: -1}];
+        const size = kmeans_data[key].metrics.length;
+        kmeans_res[key] = skmeans(kmeans_data[key].metrics, Math.min(size, 8));
     }
 
     let cluster = kmeans_res[key].test(dataset_el.metrics);
@@ -163,11 +165,11 @@ function short_predict(train_nr, from, to, timestring, reservations) {
 function predict(train_nr, from, to, timestring, reservations) {
     let from_ind = trains[train_nr].findIndex(el => el.opuic == from);
     let to_ind = trains[train_nr].findIndex(el => el.opuic == to);
-    if (from_ind == -1 || to_ind == -1) {
-        console.log('No data for ' + from_ind + ' to ' + to_ind);
-        return [{delta: 0, prob: -1}];
-    }
+
+    if (from_ind == -1 || to_ind == -1) return [{delta: 0, prob: -1}];
+
     let density = [];
+
     if (from_ind < to_ind)
         for (let i = from_ind; i != to_ind; ++i) {
             let cur = trains[train_nr][i].opuic;
@@ -180,12 +182,14 @@ function predict(train_nr, from, to, timestring, reservations) {
             let nxt = trains[train_nr][i - 1].opuic;
             short_predict(train_nr, cur, nxt, timestring, reservations).forEach(el => density.push(el));
         }
+
     density.sort((a, b) => a.delta - b.delta);
     for (let i = 1; i < density.length; ++i)
         density[i].prob = Math.min(density[i].prob, density[i - 1].prob);
     return density;
 }
 
+console.log('hello');
 console.log(predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 1));
 
 // API
