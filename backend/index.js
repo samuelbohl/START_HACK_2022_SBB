@@ -177,11 +177,11 @@ const port = process.env.PORT || "8000";
 
 app.use(cors());
 
-
 app.get("/", (req, res) => {
-    res.status(200).send("WHATABYTE: Food For Devs");
+    res.status(200).send("REST API is ready :)");
 });
 
+// returns a list of all stations
 app.get("/stations", (req, res) => {
 
     let stations = new Set([]);
@@ -201,11 +201,17 @@ app.get("/stations", (req, res) => {
     res.status(200).send(JSON.stringify(Array.from(new Set(stations))));
 });
 
+
+// adds zero e.g. before month
+function addZero(num) {
+    return num < 10 ? '0'+num : num;
+}
+
+// returns all trips between 2 stations
 app.get("/trips/:fromId/:toId", (req, res) => {
 
     const fromId = req.params.fromId
     const toId = req.params.toId
-    //const time = req.params.time
 
     let trips = [];
 
@@ -214,14 +220,54 @@ app.get("/trips/:fromId/:toId", (req, res) => {
         const hi = trains[train_id].findIndex(element => element.opuic == toId);
         if (lo != -1 && hi != -1 && lo < hi) {
             let temp_train = trains_records.find((el) => el['Linie'] == train_id)
-            trains[train_id][lo]['time'] = new Date(trains[train_id][lo]['time']).getHours( )+ ':'+ new Date(trains[train_id][lo]['time']).getMinutes()
-            trains[train_id][hi]['time'] = new Date(trains[train_id][hi]['time']).getHours( )+ ':'+ new Date(trains[train_id][hi]['time']).getMinutes()
+            trains[train_id][lo]['time_str'] = addZero(new Date(trains[train_id][lo]['time']).getHours())+ ':'+ addZero(new Date(trains[train_id][lo]['time']).getMinutes())
+            trains[train_id][hi]['time_str'] = addZero(new Date(trains[train_id][hi]['time']).getHours())+ ':'+ addZero(new Date(trains[train_id][hi]['time']).getMinutes())
             trips.push({from: trains[train_id][lo], to: trains[train_id][hi], train: train_id, train_name: temp_train['Line Text']});
         }
     }
 
     res.status(200).send(JSON.stringify(trips));
 });
+
+
+// Returns all the possible destinations for a given station
+app.get("/trips/:fromId", (req, res) => {
+
+    const fromId = req.params.fromId
+
+    let trips = [];
+
+    for (let train_id in trains) {
+        const lo = trains[train_id].findIndex(element => element.opuic == fromId);
+        trains[train_id].forEach((element) => {
+            const hi = trains[train_id].findIndex(el => el.opuic == element.opuic)
+            if (lo != -1 && hi != -1 && lo < hi) {
+                let temp_train = trains_records.find((el) => el['Linie'] == train_id)
+                trains[train_id][lo]['time_str'] = addZero(new Date(trains[train_id][lo]['time']).getHours())+ ':'+ addZero(new Date(trains[train_id][lo]['time']).getMinutes())
+                trains[train_id][hi]['time_str'] = addZero(new Date(trains[train_id][hi]['time']).getHours())+ ':'+ addZero(new Date(trains[train_id][hi]['time']).getMinutes())
+                trips.push(element.opuic);
+            }
+        });
+    }
+
+    res.status(200).send(JSON.stringify(trips));
+});
+
+// Create the Auth Token - Returns a Promise with the token
+async function getAuthToken() {
+    const axios = require('axios');
+    const oauth = require('axios-oauth-client');
+    const getClientCredentials = oauth.client(axios.create(), {
+        url: 'https://sso.sbb.ch/auth/realms/SBB_Public/protocol/openid-connect/token',
+        grant_type: 'client_credentials',
+        client_id: '40725ec8',
+        client_secret: '71128e76d206db0a348be7822e08d561',
+        scope: 'baz'
+    });
+
+    const auth = await getClientCredentials();
+    return auth.access_token;
+}
 
 
 app.listen(port, () => {
