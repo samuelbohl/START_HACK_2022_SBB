@@ -115,7 +115,7 @@ dataset.forEach(dataset_el => {
 
 console.log("Preprocessing done.");
 
-function short_predict(train_nr, from, to, timestring, reservations) {
+async function short_predict(train_nr, from, to, timestring, reservations) {
     let dataset_el = {
         train_nr: train_nr,
         from: from,
@@ -126,7 +126,7 @@ function short_predict(train_nr, from, to, timestring, reservations) {
     };
     time_metric.augment(dataset_el);
     holiday_metric.augment(dataset_el);
-    weather_metric.augment(dataset_el);
+    await weather_metric.augment(dataset_el);
 
     const key = [
         dataset_el.from,
@@ -162,7 +162,7 @@ function short_predict(train_nr, from, to, timestring, reservations) {
     return density;
 }
 
-function predict(train_nr, from, to, timestring, reservations) {
+async function predict(train_nr, from, to, timestring, reservations) {
     let from_ind = trains[train_nr].findIndex(el => el.opuic == from);
     let to_ind = trains[train_nr].findIndex(el => el.opuic == to);
 
@@ -174,23 +174,23 @@ function predict(train_nr, from, to, timestring, reservations) {
         for (let i = from_ind; i != to_ind; ++i) {
             let cur = trains[train_nr][i].opuic;
             let nxt = trains[train_nr][i + 1].opuic;
-            short_predict(train_nr, cur, nxt, timestring, reservations).forEach(el => density.push(el));
+            density.push(...await short_predict(train_nr, cur, nxt, timestring, reservations));
         }
     else
         for (let i = from_ind; i != to_ind; --i) {
             let cur = trains[train_nr][i].opuic;
             let nxt = trains[train_nr][i - 1].opuic;
-            short_predict(train_nr, cur, nxt, timestring, reservations).forEach(el => density.push(el));
+            density.push(...await short_predict(train_nr, cur, nxt, timestring, reservations));
         }
 
     density.sort((a, b) => a.delta - b.delta);
     for (let i = 1; i < density.length; ++i)
         density[i].prob = Math.min(density[i].prob, density[i - 1].prob);
+    console.log(density);
     return density;
 }
 
-console.log('hello');
-console.log(predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 1));
+predict(520, '8500207', '8506302', '2022-03-20 10:00:00', 1);
 
 // API
 
@@ -277,23 +277,6 @@ app.get("/trips/:fromId", (req, res) => {
 
     res.status(200).send(JSON.stringify(trips));
 });
-
-// Create the Auth Token - Returns a Promise with the token
-async function getAuthToken() {
-    const axios = require('axios');
-    const oauth = require('axios-oauth-client');
-    const getClientCredentials = oauth.client(axios.create(), {
-        url: 'https://sso.sbb.ch/auth/realms/SBB_Public/protocol/openid-connect/token',
-        grant_type: 'client_credentials',
-        client_id: '40725ec8',
-        client_secret: '71128e76d206db0a348be7822e08d561',
-        scope: ''
-    });
-
-    const auth = await getClientCredentials();
-    return auth.access_token;
-}
-
 
 app.listen(port, () => {
     console.log(`Listening to requests on http://localhost:${port}`);

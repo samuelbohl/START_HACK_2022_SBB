@@ -1,8 +1,23 @@
 const fs = require('fs');
 const axios = require('axios');
+const oauth = require('axios-oauth-client');
 
 const snooze = ms => new Promise(resolve => setTimeout(resolve, ms));
 let stationTimesWeatherDict = {};
+
+// Create the Auth Token - Returns a Promise with the token
+async function getAuthToken() {
+    const getClientCredentials = oauth.client(axios.create(), {
+        url: 'https://sso.sbb.ch/auth/realms/SBB_Public/protocol/openid-connect/token',
+        grant_type: 'client_credentials',
+        client_id: '40725ec8',
+        client_secret: '71128e76d206db0a348be7822e08d561',
+        scope: ''
+    });
+
+    const auth = await getClientCredentials();
+    return auth.access_token;
+}
 
 let cur = 0;
 async function getLeisureScore(timestamp, uid) {
@@ -12,15 +27,17 @@ async function getLeisureScore(timestamp, uid) {
     const response = axios.get('https://weather.api.sbb.ch/' + timestamp + '/leisure_biking:idx/' + uid + '/json', {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJOMDhQek52bDdqNGFfSlBmZ0FlZFNYTHNjcmprbmZ4OXppR2hxcHN1dkt3In0.eyJleHAiOjE2NDgxNjI4MTAsImlhdCI6MTY0ODE1ODMxMCwianRpIjoiMTQ2ZTAxYjUtZmU3Yy00OGZiLThjZmMtZDRjOTk3ODA0MWE4IiwiaXNzIjoiaHR0cHM6Ly9zc28uc2JiLmNoL2F1dGgvcmVhbG1zL1NCQl9QdWJsaWMiLCJhdWQiOiJhcGltLXdlYXRoZXJfc2VydmljZS1wcm9kLWF3cyIsInN1YiI6IjZjYmY0ZTRmLTJiZGItNDM2YS1hNDlhLTgzMjRmOThiNzNkNCIsInR5cCI6IkJlYXJlciIsImF6cCI6IjQwNzI1ZWM4IiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyJodHRwczovL2RldmVsb3Blci5zYmIuY2giXSwic2NvcGUiOiJjbGllbnQtaW5mbyBzYmJ1aWQgcHJvZmlsZSBlbWFpbCBTQkIiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImNsaWVudEhvc3QiOiIyMTcuMTkyLjEwMi4xNCIsImNsaWVudElkIjoiNDA3MjVlYzgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNDA3MjVlYzgiLCJjbGllbnRBZGRyZXNzIjoiMjE3LjE5Mi4xMDIuMTQiLCJlbWFpbCI6InNlcnZpY2UtYWNjb3VudC00MDcyNWVjOEBwbGFjZWhvbGRlci5vcmcifQ.djJJ86Bycj15rKuGUDAd1aIkuHvPkO3mHwpgiz2pN920WK-vcti5godRFCH99TkyNARO6vg_bq63P8jqqT6N8XGPNzB9HmgAbrYjNFYvdDkoXKNQjPcUDRdh6nbdjPyzmwYnd3Y7pMMat4v1k8mItjYxTKLV-36U0zOV5FwKMI4MSJPj-zs5NquF4FGyY0O9P8yFBBkM4cGWc1t0iVlVQsZ10CZETXFino6pV_NZqaS6p35htSzK9fIFEt6VTXBVE9d7zjdXNehNkS2zqbkpbByByQyAN_I2KzFXQSSYgZ8H26FPksMqu_Rw7jYb6cjPJVx-QdRf8sz5AakMDbeCAA'
+        'Authorization': await getAuthToken()
       }
     });
 
     let data = {};
     await response.then(response => {data = response.data.data[0].coordinates[0].dates})
-    console.log('Queried weather API for ' + station);
+    // console.log('Queried weather API for ' + uid);
     data.forEach(elres => {
-        stationTimesWeatherDict[[el.station, elres.date.slice(0,10)]] = parseFloat(elres.value)
+        let station = uid.substring(6);
+        // console.log([station, elres.date.slice(0,10)] + ' = ' + elres.value);
+        stationTimesWeatherDict[[station, elres.date.slice(0,10)]] = parseFloat(elres.value)
     })
 
     --cur;
@@ -47,25 +64,22 @@ function save() {
     });
 }
 
-function get(opuic, timestring) {
+async function get(opuic, timestring) {
     const datestring = timestring.substring(0, 10);
     if (!([opuic, datestring] in stationTimesWeatherDict)) {
         const station = 'didok_' + opuic;
         const timestring = datestring + 'T12:00:00Z';
-        getLeisureScore(timestring, station);
+        await getLeisureScore(timestring, station);
     }
+
     return stationTimesWeatherDict[[opuic, datestring]];
 }
 
 module.exports = {
-    augment: function(dataset_el) {
+    augment: async function(dataset_el) {
         const tmp = Math.max(
-            get(dataset_el.from, dataset_el.timestring),
-            get(dataset_el.to, dataset_el.timestring)
-        );
-        if (isNaN(tmp)) console.log(
-            get(dataset_el.from, dataset_el.timestring),
-            get(dataset_el.to, dataset_el.timestring)
+            await get(dataset_el.from, dataset_el.timestring),
+            await get(dataset_el.to, dataset_el.timestring)
         );
         dataset_el.metrics.push(tmp);
     },
