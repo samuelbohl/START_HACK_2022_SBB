@@ -283,7 +283,7 @@ async function getAuthToken() {
         grant_type: 'client_credentials',
         client_id: '40725ec8',
         client_secret: '71128e76d206db0a348be7822e08d561',
-        scope: 'baz'
+        scope: ''
     });
 
     const auth = await getClientCredentials();
