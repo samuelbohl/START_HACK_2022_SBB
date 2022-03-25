@@ -3,6 +3,9 @@
 A cycler's best friend: Helping bikers avoid uncertainty about the mandatory bicycle reservations since 2022.
 
 
+![Screenshot from 2022-03-25 09-34-08](https://user-images.githubusercontent.com/50950798/160088979-f7a2abad-56ff-4ce6-8032-544ef3780843.png)
+
+
 ## The Problem
 Bikers are often uncertain about when to reserve a spot for their bike when planning a tour. 
 This leads to overbooking, especially for the return trip, since the bikers do not exactly know when they will return and a reservation is mandatory, when getting a bike aboard the train.
