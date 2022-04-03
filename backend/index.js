@@ -310,3 +310,5 @@ app.get("/prob/:train/:fromId/:toId/:date/:bikes", async (req, res) => {
 app.listen(port, () => {
     console.log(`Listening to requests on http://localhost:${port}`);
 });
+
+module.exports = app;
