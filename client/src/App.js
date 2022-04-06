@@ -19,7 +19,15 @@ function App() {
   const [date, setDate] = useState();
   const [time, setTime] = useState();
 
-  const apiURl = process.env.API_URL || 'localhost:8000';
+
+  let apiURl = process.env.REACT_APP_API_URL;
+
+  // use local API if on localhost
+  if (location.hostname === "localhost") {
+    apiURl = 'localhost:8000';
+  }
+
+  console.log(apiURl)
 
   useEffect(() => {
     axios.get('http://' + apiURl + '/stations', {mode: 'no-cors'})

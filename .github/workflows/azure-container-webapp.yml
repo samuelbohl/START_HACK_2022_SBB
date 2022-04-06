@@ -22,7 +22,7 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - run: |
-          docker build ./backend -t sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-backend:${{ github.sha }}
-          docker push sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-backend:${{ github.sha }}
-          docker build ./client -t sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-client:${{ github.sha }}
-          docker push sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-client:${{ github.sha }}
+          docker build ./backend -t sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-backend:latest
+          docker push sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-backend:latest
+          docker build ./client -t sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-client:latest
+          docker push sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-client:latest
