@@ -1,0 +1,28 @@
+name: Build a Docker image and Push it to ACR
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    environment: deployment-secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: azure/docker-login@v1
+        with:
+          login-server: sbbBikeReservationPlannerContainer.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - run: |
+          docker build ./backend -t sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-backend:${{ github.sha }}
+          docker push sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-backend:${{ github.sha }}
+          docker build ./client -t sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-client:${{ github.sha }}
+          docker push sbbBikeReservationPlannerContainer.azurecr.io/sbbbikereservationplanner-client:${{ github.sha }}
