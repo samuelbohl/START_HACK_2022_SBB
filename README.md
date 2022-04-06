@@ -21,7 +21,9 @@ In short, the tool improves efficiency for customers, by helping them book at th
 
 ## Deployment
 
-```
+The client and backend are both individual containers bundled together with docker-compose.
+
+```bash
 
 # Build and startup
 $ docker-compose up -d
