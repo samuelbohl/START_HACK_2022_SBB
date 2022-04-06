@@ -68,3 +68,11 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `yarn build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+### Docker
+
+```
+docker build . -t samuelbohl/sbbbikereservationplanner-client:v1
+
+docker run -p 80:3000 -d samuelbohl/sbbbikereservationplanner-client:v1
+```

@@ -10,8 +10,8 @@ async function getAuthToken() {
     const getClientCredentials = oauth.client(axios.create(), {
         url: 'https://sso.sbb.ch/auth/realms/SBB_Public/protocol/openid-connect/token',
         grant_type: 'client_credentials',
-        client_id: '40725ec8',
-        client_secret: '71128e76d206db0a348be7822e08d561',
+        client_id: process.env.SBB_API_CLIENT_ID,
+        client_secret: process.env.SBB_API_CLIENT_SECRET_KEY,
         scope: ''
     });
 

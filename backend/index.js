@@ -2,6 +2,7 @@ const fs = require("fs");
 const csv = require("csv-parse/lib/sync");
 const { start } = require("repl");
 const skmeans = require('skmeans');
+require('dotenv').config();
 
 const time_metric = require('./metrics/time');
 const holiday_metric = require('./metrics/holiday');

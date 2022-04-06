@@ -18,3 +18,15 @@ Using state of the art unsupervised machine learning and clustering methods and 
 The method can be expanded with additional data to better serve both the customer and SBB.
 
 In short, the tool improves efficiency for customers, by helping them book at the right time, and also SBB, because no redundant reservations are made.
+
+## Deployment
+
+```
+
+# Build and startup
+$ docker-compose up -d
+
+# Rebuild
+$ docker-compose up -d --no-deps --build
+
+```
