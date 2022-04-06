@@ -5,10 +5,7 @@ import axios from 'axios';
 import moment from 'moment';
 import Connection from './Connection';
 
-// import { useState } from 'react/cjs/react.production.min';
 const { Header, Content, Footer } = Layout;
-
-// API: 57c5dbbbf1fe4d000100001898a7f7ea42164872bac23440877f3dee
 
 
 function App() {
@@ -22,8 +19,10 @@ function App() {
   const [date, setDate] = useState();
   const [time, setTime] = useState();
 
+  const apiURl = process.env.API_URL || 'localhost:8000';
+
   useEffect(() => {
-    axios.get('http://localhost:8000/stations', {mode: 'no-cors'})
+    axios.get('http://' + apiURl + '/stations', {mode: 'no-cors'})
     .then(res => {
       setStations(()=> res.data)
       setDest(()=> res.data)
@@ -38,7 +37,7 @@ function App() {
   const onFinish = (values) => {
     console.log('Success:', values);
 
-    axios.get('http://localhost:8000/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
+    axios.get('http://' + apiURl + '/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
     .then(res => {
       setFrom(() => stations.find((station) => station.id == values.from).name)
       setTo(() => stations.find((station) => station.id == values.to).name)
@@ -81,7 +80,7 @@ function App() {
         placeholder="From"
         optionFilterProp="children"
         onChange={(value) => {
-          axios.get('http://localhost:8000/trips/' + value, {mode: 'no-cors'})
+          axios.get('http://' + apiURl + '/trips/' + value, {mode: 'no-cors'})
           .then(res => {
             let data = new Set(res.data);
             setDest(() => stations.filter((el) => data.has(el.id) ))
@@ -194,20 +193,5 @@ function App() {
     </Layout>
   );
 }
-
-// Requirements:
-// - get all available Stations
-// - given a station, get all possible connections
-// - given a start, end and time, get next few connections
-// - given a connection, get the probabilities
-// - given probabilities display graph
-
-
-// Connection
-// max leisure score
-// holiday score
-// capacity
-// reservations over time
-// time of day (aka zug nummer)
 
 export default App;
