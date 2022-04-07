@@ -20,17 +20,17 @@ function App() {
   const [time, setTime] = useState();
 
 
-  let apiURl = process.env.REACT_APP_API_URL;
+  let apiURl = 'https://' + process.env.REACT_APP_API_URL;
 
   // use local API if on localhost
   if (location.hostname === "localhost") {
-    apiURl = 'localhost:8000';
+    apiURl = 'http://localhost:8000';
   }
 
   console.log(apiURl)
 
   useEffect(() => {
-    axios.get('http://' + apiURl + '/stations', {mode: 'no-cors'})
+    axios.get(apiURl + '/stations', {mode: 'no-cors'})
     .then(res => {
       setStations(()=> res.data)
       setDest(()=> res.data)
@@ -45,7 +45,7 @@ function App() {
   const onFinish = (values) => {
     console.log('Success:', values);
 
-    axios.get('http://' + apiURl + '/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
+    axios.get(apiURl + '/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
     .then(res => {
       setFrom(() => stations.find((station) => station.id == values.from).name)
       setTo(() => stations.find((station) => station.id == values.to).name)
@@ -88,7 +88,7 @@ function App() {
         placeholder="From"
         optionFilterProp="children"
         onChange={(value) => {
-          axios.get('http://' + apiURl + '/trips/' + value, {mode: 'no-cors'})
+          axios.get(apiURl + '/trips/' + value, {mode: 'no-cors'})
           .then(res => {
             let data = new Set(res.data);
             setDest(() => stations.filter((el) => data.has(el.id) ))
