@@ -15,7 +15,7 @@ function Connection(props) {
     const [recomendation, setRecomendation] = useState('Last Minute');
 
     useEffect(() => {
-        axios.get('http://localhost:8000/prob/' + props.trainNum + '/' + props.fromId + '/' + props.toId + '/' + moment(props.date).format("YYYY-MM-DD") + '/1', {mode: 'no-cors'})
+        axios.get(props.apiUrl + '/prob/' + props.trainNum + '/' + props.fromId + '/' + props.toId + '/' + moment(props.date).format("YYYY-MM-DD") + '/1', {mode: 'no-cors'})
         .then(res => {
             setData(() => res.data.map((el) => ({...el, delta: el.delta/60000})))
             setLoading(() => false)
