@@ -21,7 +21,6 @@ function Connection(props) {
             setLoading(() => false)
 
             res.data.some((dataPoint, index) => {
-                console.log(dataPoint)
                 if(dataPoint.prob > 0.65) {
                     let departureTimeAndDateMoment = moment(moment(props.date).format("YYYY-MM-DD") + ' ' + props.depTime)
                     departureTimeAndDateMoment.subtract(moment.duration(-1 * dataPoint.delta))
@@ -31,8 +30,6 @@ function Connection(props) {
                     } else {
                         setRecomendation(() => 'ASAP')
                     }
-                    console.log(departureTimeAndDateMoment)
-                    console.log(index)
                     return true;
                 }
                 return false;
@@ -41,7 +38,6 @@ function Connection(props) {
             if(res.data.length <= 1) {
                 setRecomendation(() => 'No Data')
             }
-            console.log(res.data)
         })
     }, [])
 

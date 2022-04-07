@@ -1,6 +1,6 @@
 import './App.css';
 import { useState, useEffect } from 'react';
-import { Layout, Form, Button, Select, Row, Col, DatePicker, TimePicker} from 'antd';
+import { Layout, Form, Button, Select, Row, Col, DatePicker, TimePicker, Modal} from 'antd';
 import axios from 'axios';
 import moment from 'moment';
 import Connection from './Connection';
@@ -9,6 +9,16 @@ const { Header, Content, Footer } = Layout;
 
 
 function App() {
+
+  // Modal on first visit
+  const [showModal, setShowmodal] = useState(false);
+
+  useEffect(() => {
+    if(!window.sessionStorage.getItem('visited')) {
+      setShowmodal(() => true)
+      window.sessionStorage.setItem('visited', true)
+    }
+  }, []);
 
   const [stations, setStations] = useState([]);
   const [dest, setDest] = useState([]);
@@ -27,8 +37,6 @@ function App() {
     apiURl = 'http://localhost:8000';
   }
 
-  console.log(apiURl)
-
   useEffect(() => {
     axios.get(apiURl + '/stations', {mode: 'no-cors'})
     .then(res => {
@@ -43,7 +51,6 @@ function App() {
 
 
   const onFinish = (values) => {
-    console.log('Success:', values);
 
     axios.get(apiURl + '/trips/' + values.from + '/' + values.to, {mode: 'no-cors'})
     .then(res => {
@@ -198,6 +205,16 @@ function App() {
     </Form>
       </Content>
       <Footer style={{textAlign: 'center', backgroundColor: 'white'}}>START HACK 2022</Footer>
+
+      <Modal title="Short Info" visible={showModal} onOk={() => setShowmodal(false)} onCancel={() => setShowmodal(false)} cancelButtonProps={{ style: { display: 'none' } }}>
+        <p>Hi :)</p>
+        <p>Please keep in mind that this is a prototype developed in 36 hours at the START HACK 2022 hackathon.</p>
+        <p>The data were able to obtain and preprocess in this time is focused on the more central connections (basically most IC connections). 
+          For some connections we have plenty of data and thus we can make more accurate predictions. An example for this would be the connection between Zürich and Lugano. (especially Sundays..)
+          But there are also some connections which simply do not provide enough data to work with. So there is much headroom to improve in the future.
+        </p>
+        <p>Thanks for visiting!</p>
+      </Modal>
     </Layout>
   );
 }
