@@ -13,5 +13,7 @@ services:
       context: ./backend
       dockerfile: ./Dockerfile
     image: "samuelbohl/sbbbikereservationplanner-backend"
+    expose:
+      - "8000"
     ports:
       - "8000:8000"
