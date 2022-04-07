@@ -29,6 +29,9 @@ async function getLeisureScore(timestamp, uid) {
         'Content-Type': 'application/json',
         'Authorization': await getAuthToken()
       }
+    }).catch((err) => {
+        console.log('Error fetching weather data')
+        console.log(err)
     });
 
     let data = {};
