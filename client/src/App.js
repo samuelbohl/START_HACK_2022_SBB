@@ -43,6 +43,7 @@ function App() {
       setStations(()=> res.data)
       setDest(()=> res.data)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addZero = (num) => {

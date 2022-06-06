@@ -39,6 +39,7 @@ function Connection(props) {
                 setRecomendation(() => 'No Data')
             }
         })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const config = {
